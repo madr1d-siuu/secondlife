@@ -1,10 +1,3 @@
-/**
- * SecondLife — Клиентская часть интернет-ресурса для размещения объявлений
- * Курсовая работа Беспалова Е.А., ИКБО-14-24, РТУ МИРЭА
- * 
- * App — основной класс приложения, управляет всей логикой UI
- */
-
 class App {
     constructor(apiService, authService) {
         this.api = apiService;
@@ -13,17 +6,14 @@ class App {
         this.currentCity = 'all';
         this.items = [];
         this.editingItemId = null;
-        this.activeChatUser = null;
-        this._lastPurchaseItem = null;
+        this.activeChatSeller = null;
+        this.chatMessages = {};
 
-        // DOM-элементы
         this.catalogGrid = document.getElementById('catalogGrid');
         this.favoritesGrid = document.getElementById('favoritesGrid');
         this.favoritesEmpty = document.getElementById('favoritesEmpty');
         this.myItemsGrid = document.getElementById('myItemsGrid');
         this.myItemsEmpty = document.getElementById('myItemsEmpty');
-        this.myOrdersGrid = document.getElementById('myOrdersGrid');
-        this.myOrdersEmpty = document.getElementById('myOrdersEmpty');
         this.loader = document.getElementById('loader');
         this.notification = document.getElementById('notification');
         this.searchInput = document.querySelector('.search__input');
@@ -47,8 +37,6 @@ class App {
         this.loadItems();
     }
 
-    // ==================== АВТОРИЗАЦИЯ ====================
-
     updateUIForAuth() {
         const loggedIn = this.auth.isLoggedIn();
         const user = this.auth.currentUser;
@@ -57,7 +45,6 @@ class App {
         document.getElementById('headerUser').style.display = loggedIn ? 'flex' : 'none';
         document.getElementById('navFavorites').style.display = loggedIn ? '' : 'none';
         document.getElementById('navMyItems').style.display = loggedIn ? '' : 'none';
-        document.getElementById('navMyOrders').style.display = loggedIn ? '' : 'none';
         document.getElementById('navProfile').style.display = loggedIn ? '' : 'none';
 
         if (loggedIn && user) {
@@ -109,58 +96,6 @@ class App {
         });
     }
 
-    setupAuthForms() {
-        document.getElementById('btnLogin').addEventListener('click', () => this.openModal('authModal'));
-        document.getElementById('btnRegister').addEventListener('click', () => this.openModal('registerModal'));
-        document.getElementById('switchToRegister').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.closeModal('authModal');
-            this.openModal('registerModal');
-        });
-        document.getElementById('switchToLogin').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.closeModal('registerModal');
-            this.openModal('authModal');
-        });
-        document.getElementById('authForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('authEmail').value.trim();
-            const password = document.getElementById('authPassword').value;
-            const result = this.auth.login(email, password);
-            if (result.success) {
-                this.closeModal('authModal');
-                this.updateUIForAuth();
-                this.showNotification(`Добро пожаловать, ${result.user.firstName}!`);
-                this.loadItems();
-            } else {
-                alert(result.error);
-            }
-        });
-        document.getElementById('registerForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const userData = {
-                firstName: document.getElementById('regFirstName').value.trim(),
-                lastName: document.getElementById('regLastName').value.trim(),
-                middleName: document.getElementById('regMiddleName').value.trim(),
-                age: parseInt(document.getElementById('regAge').value),
-                city: document.getElementById('regCity').value.trim(),
-                email: document.getElementById('regEmail').value.trim(),
-                password: document.getElementById('regPassword').value
-            };
-            const result = this.auth.register(userData);
-            if (result.success) {
-                this.closeModal('registerModal');
-                this.updateUIForAuth();
-                this.showNotification(`Регистрация успешна! ${result.user.firstName}, добро пожаловать!`);
-                this.loadItems();
-            } else {
-                alert(result.error);
-            }
-        });
-    }
-
-    // ==================== НАВИГАЦИЯ ====================
-
     setupNavigation() {
         document.querySelector('.logo__text').addEventListener('click', () => this.showPage('catalog'));
         document.querySelectorAll('.nav__link').forEach(link => {
@@ -201,7 +136,6 @@ class App {
             'about': 'aboutPage',
             'support': 'supportPage',
             'my-items': 'myItemsPage',
-            'my-orders': 'myOrdersPage',
             'profile': 'profilePage',
             'developer': 'developerPage'
         };
@@ -221,118 +155,17 @@ class App {
             if (!this.auth.isLoggedIn()) { this.openModal('authModal'); return; }
             this.loadMyItems();
         }
-        if (page === 'my-orders') {
-            if (!this.auth.isLoggedIn()) { this.openModal('authModal'); return; }
-            this.loadMyOrders();
-        }
         if (page === 'profile') {
             if (!this.auth.isLoggedIn()) { this.openModal('authModal'); return; }
             this.updateProfilePage();
         }
     }
 
-    // ==================== МОДАЛЬНЫЕ ОКНА ====================
-
-    setupModals() {
-        document.addEventListener('click', (e) => {
-            const closeBtn = e.target.closest('[data-modal]');
-            if (closeBtn) this.closeModal(closeBtn.dataset.modal);
-        });
-        document.querySelectorAll('.modal__overlay').forEach(overlay => {
-            overlay.addEventListener('click', () => {
-                const modal = overlay.closest('.modal');
-                if (modal) this.closeModal(modal.id);
-            });
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal--open').forEach(m => this.closeModal(m.id));
-            }
-        });
-    }
-
-    openModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('modal--open');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.remove('modal--open');
-            document.body.style.overflow = '';
-        }
-    }
-
-    // ==================== ЗАГРУЗКА ДАННЫХ ====================
-
-    toggleLoader(show) {
-        show ? this.loader.classList.add('catalog__loader--visible') : this.loader.classList.remove('catalog__loader--visible');
-    }
-
-    async loadItems(category = 'all', searchQuery = '') {
-        this.toggleLoader(true);
-        this.catalogGrid.innerHTML = '';
-        try {
-            this.items = searchQuery
-                ? await this.api.searchItems(searchQuery)
-                : await this.api.getItemsByCategory(category);
-            this.updateCityFilter();
-            this.applyAllFilters();
-        } catch (error) {
-            console.error('Ошибка загрузки:', error);
-            this.catalogGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center">Ошибка загрузки</p>';
-        } finally {
-            this.toggleLoader(false);
-        }
-    }
-
-    findItem(id) {
-        let item = this.items.find(i => i.id === id);
-        if (!item && this.auth.currentUser) {
-            item = this.api.getUserItems(this.auth.currentUser.email).find(i => i.id === id);
-        }
-        return item;
-    }
-
-    loadMyItems() {
-        if (!this.auth.isLoggedIn()) return;
-        const userEmail = this.auth.currentUser.email;
-        const myItems = this.api.getUserItems(userEmail);
-        this.myItemsGrid.innerHTML = '';
-        if (this.myItemsEmpty) this.myItemsEmpty.style.display = myItems.length === 0 ? 'block' : 'none';
-        if (myItems.length > 0) {
-            this.myItemsGrid.innerHTML = myItems.map(item => {
-                const isReserved = chatService.isReserved(item.id);
-                return CardComponent.render(item, true, this.isFavorited(item.id), isReserved);
-            }).join('');
-        }
-    }
-
-    loadMyOrders() {
-        if (!this.auth.isLoggedIn()) return;
-        const orders = chatService.getReservedItems(this.auth.currentUser.email);
-        this.myOrdersGrid.innerHTML = '';
-        if (this.myOrdersEmpty) this.myOrdersEmpty.style.display = orders.length === 0 ? 'block' : 'none';
-        if (orders.length > 0) {
-            this.myOrdersGrid.innerHTML = orders.map(order => {
-                const item = this.findItem(order.itemId);
-                if (!item) return '';
-                return CardComponent.render(item, false, false, true) + 
-                    `<div style="margin-top:8px"><button class="button button--danger button--small cancel-reserve-btn" data-id="${order.itemId}">Отменить бронь</button></div>`;
-            }).join('');
-        }
-    }
-
-    // ==================== ИЗБРАННОЕ ====================
-
+    // === ИЗБРАННОЕ ===
     getFavorites() {
         if (!this.auth.currentUser) return [];
         try {
-            const key = `secondlife_fav_${this.auth.currentUser.email}`;
+            const key = `secondlife_favorites_${this.auth.currentUser.email}`;
             const stored = localStorage.getItem(key);
             return stored ? JSON.parse(stored) : [];
         } catch {
@@ -342,7 +175,7 @@ class App {
 
     saveFavorites(ids) {
         if (!this.auth.currentUser) return;
-        const key = `secondlife_fav_${this.auth.currentUser.email}`;
+        const key = `secondlife_favorites_${this.auth.currentUser.email}`;
         localStorage.setItem(key, JSON.stringify(ids));
     }
 
@@ -366,7 +199,12 @@ class App {
             this.showNotification('Удалено из избранного');
         }
         this.saveFavorites(favs);
-        this.applyAllFilters();
+
+        // Обновить отображение в каталоге
+        if (document.getElementById('catalogPage').classList.contains('page-section--active')) {
+            this.applyAllFilters();
+        }
+        // Обновить отображение в избранном
         if (document.getElementById('favoritesPage').classList.contains('page-section--active')) {
             this.loadFavorites();
         }
@@ -375,28 +213,89 @@ class App {
     loadFavorites() {
         if (!this.auth.isLoggedIn()) return;
         const favIds = this.getFavorites();
-        this.favoritesEmpty.style.display = favIds.length === 0 ? 'block' : 'none';
+        
         if (favIds.length === 0) {
             this.favoritesGrid.innerHTML = '';
+            this.favoritesEmpty.style.display = 'block';
             return;
         }
+
+        this.favoritesEmpty.style.display = 'none';
+        
+        // Найти все избранные товары
         const allItems = [...this.items, ...this.api.getLocalItems()];
         const favItems = allItems.filter(item => favIds.includes(item.id));
-        this.favoritesGrid.innerHTML = favItems.map(item => CardComponent.render(item, false, true)).join('');
+        
+        if (favItems.length === 0) {
+            this.favoritesGrid.innerHTML = '';
+            this.favoritesEmpty.style.display = 'block';
+            return;
+        }
+
+        const currentUserEmail = this.auth.currentUser?.email;
+        this.favoritesGrid.innerHTML = favItems.map(item => {
+            const isOwner = currentUserEmail && item.ownerEmail === currentUserEmail;
+            return CardComponent.render(item, isOwner, true);
+        }).join('');
     }
 
-    // ==================== БРОНИРОВАНИЕ ====================
+    toggleLoader(show) {
+        show ? this.loader.classList.add('catalog__loader--visible') : this.loader.classList.remove('catalog__loader--visible');
+    }
 
-    cancelReserve(itemId) {
-        chatService.cancelReservation(itemId);
-        this.showNotification('Бронь отменена');
-        this.loadItems(this.currentCategory);
-        if (document.getElementById('myOrdersPage').classList.contains('page-section--active')) {
-            this.loadMyOrders();
+    async loadItems(category = 'all', searchQuery = '') {
+        this.toggleLoader(true);
+        this.catalogGrid.innerHTML = '';
+        try {
+            this.items = searchQuery ? await this.api.searchItems(searchQuery) : await this.api.getItemsByCategory(category);
+            this.updateCityFilter();
+            this.applyAllFilters();
+        } catch (error) {
+            console.error('Ошибка:', error);
+            this.catalogGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center">Ошибка загрузки</p>';
+        } finally {
+            this.toggleLoader(false);
         }
     }
 
-    // ==================== КАРТОЧКИ И ДЕТАЛИ ====================
+    loadMyItems() {
+        if (!this.auth.isLoggedIn()) return;
+        const userEmail = this.auth.currentUser.email;
+        const myItems = this.api.getUserItems(userEmail);
+        this.myItemsGrid.innerHTML = '';
+        if (this.myItemsEmpty) this.myItemsEmpty.style.display = myItems.length === 0 ? 'block' : 'none';
+        if (myItems.length > 0) {
+            this.myItemsGrid.innerHTML = myItems.map(item => CardComponent.render(item, true)).join('');
+        }
+    }
+
+    setupModals() {
+        document.addEventListener('click', (e) => {
+            const closeBtn = e.target.closest('[data-modal]');
+            if (closeBtn) this.closeModal(closeBtn.dataset.modal);
+        });
+        document.querySelectorAll('.modal__overlay').forEach(overlay => {
+            overlay.addEventListener('click', () => {
+                const modal = overlay.closest('.modal');
+                if (modal) this.closeModal(modal.id);
+            });
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal--open').forEach(m => this.closeModal(m.id));
+            }
+        });
+    }
+
+    openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) { modal.classList.add('modal--open'); document.body.style.overflow = 'hidden'; }
+    }
+
+    closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) { modal.classList.remove('modal--open'); document.body.style.overflow = ''; }
+    }
 
     setupGlobalDelegation() {
         document.addEventListener('click', (e) => {
@@ -410,17 +309,6 @@ class App {
                 return;
             }
 
-            // Кнопка отмены брони
-            const cancelBtn = e.target.closest('.cancel-reserve-btn');
-            if (cancelBtn) {
-                e.stopPropagation();
-                e.preventDefault();
-                const id = parseInt(cancelBtn.dataset.id);
-                this.cancelReserve(id);
-                return;
-            }
-
-            // Остальные кнопки
             const chatBtn = e.target.closest('.card__chat-btn');
             const buyBtn = e.target.closest('.card__buy-btn');
             const editBtn = e.target.closest('.card__edit-btn');
@@ -430,57 +318,52 @@ class App {
             if (chatBtn) {
                 e.stopPropagation();
                 e.preventDefault();
-                const targetCard = chatBtn.closest('.card');
-                if (targetCard) {
-                    const id = parseInt(targetCard.dataset.id);
-                    const item = this.findItem(id);
-                    if (item) this.openChat(item);
-                }
+                const id = parseInt(chatBtn.closest('.card').dataset.id);
+                let item = this.findItem(id);
+                if (item) this.openChat(item);
                 return;
             }
 
             if (buyBtn) {
                 e.stopPropagation();
                 e.preventDefault();
-                const targetCard = buyBtn.closest('.card');
-                if (targetCard) {
-                    const id = parseInt(targetCard.dataset.id);
-                    const item = this.findItem(id);
-                    if (item) this.openPurchase(item);
-                }
+                const id = parseInt(buyBtn.closest('.card').dataset.id);
+                let item = this.findItem(id);
+                if (item) this.openPurchase(item);
                 return;
             }
 
             if (editBtn) {
                 e.stopPropagation();
                 e.preventDefault();
-                const targetCard = editBtn.closest('.card');
-                if (targetCard) {
-                    const id = parseInt(targetCard.dataset.id);
-                    const item = this.findItem(id);
-                    if (item) this.openEditAd(item);
-                }
+                const id = parseInt(editBtn.closest('.card').dataset.id);
+                let item = this.findItem(id);
+                if (item) this.openEditAd(item);
                 return;
             }
 
             if (deleteBtn) {
                 e.stopPropagation();
                 e.preventDefault();
-                const targetCard = deleteBtn.closest('.card');
-                if (targetCard) {
-                    const id = parseInt(targetCard.dataset.id);
-                    this.deleteAd(id);
-                }
+                const id = parseInt(deleteBtn.closest('.card').dataset.id);
+                this.deleteAd(id);
                 return;
             }
 
-            // Клик по карточке
             if (card) {
                 const id = parseInt(card.dataset.id);
-                const item = this.findItem(id);
+                let item = this.findItem(id);
                 if (item) this.openItemModal(item);
             }
         });
+    }
+
+    findItem(id) {
+        let item = this.items.find(i => i.id === id);
+        if (!item && this.auth.currentUser) {
+            item = this.api.getUserItems(this.auth.currentUser.email).find(i => i.id === id);
+        }
+        return item;
     }
 
     openItemModal(item) {
@@ -488,53 +371,52 @@ class App {
         const isOwner = currentUserEmail && item.ownerEmail === currentUserEmail;
         document.getElementById('modalBody').innerHTML = CardComponent.renderModalContent(item, isOwner);
         this.openModal('itemModal');
-
-        // Вешаем обработчики на кнопки в модалке
-        setTimeout(() => {
-            const modalBody = document.getElementById('modalBody');
-            if (!modalBody) return;
-
-            const modalChatBtn = modalBody.querySelector('.modal__chat-btn');
-            if (modalChatBtn) {
-                modalChatBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    this.closeModal('itemModal');
-                    this.openChat(item);
-                };
-            }
-
-            const modalBuyBtn = modalBody.querySelector('.modal__buy-btn');
-            if (modalBuyBtn) {
-                modalBuyBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    this.closeModal('itemModal');
-                    this.openPurchase(item);
-                };
-            }
-
-            const modalEditBtn = modalBody.querySelector('.modal__edit-btn');
-            if (modalEditBtn) {
-                modalEditBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    this.openEditAd(item);
-                };
-            }
-
-            const modalDeleteBtn = modalBody.querySelector('.modal__delete-btn');
-            if (modalDeleteBtn) {
-                modalDeleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    this.deleteAd(item.id);
-                };
-            }
-        }, 0);
+        
+        setTimeout(() => this.setupModalItemButtons(item), 0);
     }
 
-    // ==================== ЧАТ ====================
+    setupModalItemButtons(item) {
+        const modalBody = document.getElementById('modalBody');
+        if (!modalBody) return;
+
+        const modalChatBtn = modalBody.querySelector('.modal__chat-btn');
+        if (modalChatBtn) {
+            modalChatBtn.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                this.closeModal('itemModal');
+                this.openChat(item);
+            };
+        }
+
+        const modalBuyBtn = modalBody.querySelector('.modal__buy-btn');
+        if (modalBuyBtn) {
+            modalBuyBtn.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                this.closeModal('itemModal');
+                this.openPurchase(item);
+            };
+        }
+
+        const modalEditBtn = modalBody.querySelector('.modal__edit-btn');
+        if (modalEditBtn) {
+            modalEditBtn.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                this.openEditAd(item);
+            };
+        }
+
+        const modalDeleteBtn = modalBody.querySelector('.modal__delete-btn');
+        if (modalDeleteBtn) {
+            modalDeleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                this.deleteAd(item.id);
+            };
+        }
+    }
 
     openChat(item) {
         if (!this.auth.isLoggedIn()) {
@@ -542,10 +424,10 @@ class App {
             this.openModal('authModal');
             return;
         }
-        this.activeChatUser = item.ownerEmail;
+        this.activeChatSeller = item.seller;
         document.getElementById('chatSellerName').textContent = item.seller;
         document.getElementById('chatInput').value = '';
-        this.renderChatMessages(item.ownerEmail);
+        this.renderChatMessages();
         this.openModal('chatModal');
     }
 
@@ -554,29 +436,28 @@ class App {
             e.preventDefault();
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
-            if (!text || !this.activeChatUser) return;
-            chatService.sendMessage(this.auth.currentUser.email, this.activeChatUser, text, null);
+            if (!text || !this.activeChatSeller) return;
+            if (!this.chatMessages[this.activeChatSeller]) this.chatMessages[this.activeChatSeller] = [];
+            this.chatMessages[this.activeChatSeller].push({
+                text,
+                time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+            });
             input.value = '';
-            this.renderChatMessages(this.activeChatUser);
+            this.renderChatMessages();
         });
     }
 
-    renderChatMessages(otherEmail) {
+    renderChatMessages() {
         const container = document.getElementById('chatMessages');
-        const me = this.auth.currentUser.email;
-        const messages = chatService.getMessages(me, otherEmail);
-        container.innerHTML = messages.map(msg => {
-            const isSent = msg.sender === me;
-            const time = new Date(msg.time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            return `<div class="chat__message ${isSent ? 'chat__message--sent' : 'chat__message--received'}">
+        const messages = this.chatMessages[this.activeChatSeller] || [];
+        container.innerHTML = messages.map(msg => `
+            <div class="chat__message chat__message--sent">
                 <p>${msg.text}</p>
-                <small style="opacity:0.7;font-size:0.7rem;">${time}</small>
-            </div>`;
-        }).join('');
+                <small style="opacity:0.7;font-size:0.7rem;">${msg.time}</small>
+            </div>
+        `).join('');
         container.scrollTop = container.scrollHeight;
     }
-
-    // ==================== СОЗДАНИЕ И РЕДАКТИРОВАНИЕ ОБЪЯВЛЕНИЙ ====================
 
     setupCreateAdForm() {
         document.getElementById('btnCreateAd').addEventListener('click', () => this.startNewAd());
@@ -589,10 +470,7 @@ class App {
     }
 
     startNewAd() {
-        if (!this.auth.isLoggedIn()) {
-            this.openModal('authModal');
-            return;
-        }
+        if (!this.auth.isLoggedIn()) { this.openModal('authModal'); return; }
         this.editingItemId = null;
         document.getElementById('adFormTitle').textContent = 'Подать объявление';
         document.getElementById('adSubmitBtn').textContent = 'Опубликовать';
@@ -608,7 +486,7 @@ class App {
         if (file) {
             const reader = new FileReader();
             reader.onload = (ev) => {
-                preview.innerHTML = `<img src="${ev.target.result}" alt="Предпросмотр">`;
+                preview.innerHTML = `<img src="${ev.target.result}" alt="">`;
                 preview.classList.add('form__image-preview--visible');
             };
             reader.readAsDataURL(file);
@@ -643,10 +521,7 @@ class App {
         const video = document.getElementById('adVideo').value.trim();
         const imageFile = document.getElementById('adImage').files[0];
 
-        if (!title || !category || !price || !description) {
-            alert('Заполните все обязательные поля!');
-            return;
-        }
+        if (!title || !category || !price || !description) { alert('Заполните все обязательные поля!'); return; }
 
         const user = this.auth.currentUser;
         const seller = `${user.firstName} ${user.lastName}`;
@@ -697,14 +572,9 @@ class App {
         });
     }
 
-    // ==================== ПОКУПКА ====================
-
     openPurchase(item) {
-        this._lastPurchaseItem = item;
         const container = document.getElementById('purchaseItemInfo');
-        const priceFormatted = new Intl.NumberFormat('ru-RU', {
-            style: 'currency', currency: 'RUB', maximumFractionDigits: 0
-        }).format(item.price);
+        const priceFormatted = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(item.price);
         const imageSrc = item.image || CardComponent.getPlaceholderImage(item.category);
         container.innerHTML = `
             <img src="${imageSrc}" alt="${item.title}" class="purchase__item-image"
@@ -721,31 +591,50 @@ class App {
             e.preventDefault();
             const buyerName = document.getElementById('buyerName').value.trim();
             const buyerPhone = document.getElementById('buyerPhone').value.trim();
-            if (!buyerName || !buyerPhone) {
-                alert('Заполните имя и телефон!');
-                return;
-            }
-            if (this._lastPurchaseItem) {
-                chatService.reserveItem(
-                    this._lastPurchaseItem.id,
-                    this.auth.currentUser.email,
-                    this._lastPurchaseItem.ownerEmail
-                );
-                chatService.sendMessage(
-                    this.auth.currentUser.email,
-                    this._lastPurchaseItem.ownerEmail,
-                    'Товар забронирован! Оформлен заказ.',
-                    this._lastPurchaseItem.id
-                );
-                this.showNotification('Товар забронирован!');
-                this.loadItems(this.currentCategory);
-            }
+            if (!buyerName || !buyerPhone) { alert('Заполните имя и телефон!'); return; }
             this.closeModal('purchaseModal');
             document.getElementById('purchaseForm').reset();
+            this.showNotification('Заказ оформлен. Продавец свяжется с вами.');
         });
     }
 
-    // ==================== ФИЛЬТРЫ И ПОИСК ====================
+    setupAuthForms() {
+        document.getElementById('btnLogin').addEventListener('click', () => this.openModal('authModal'));
+        document.getElementById('btnRegister').addEventListener('click', () => this.openModal('registerModal'));
+        document.getElementById('switchToRegister').addEventListener('click', (e) => {
+            e.preventDefault(); this.closeModal('authModal'); this.openModal('registerModal');
+        });
+        document.getElementById('switchToLogin').addEventListener('click', (e) => {
+            e.preventDefault(); this.closeModal('registerModal'); this.openModal('authModal');
+        });
+        document.getElementById('authForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const result = this.auth.login(email, password);
+            if (result.success) {
+                this.closeModal('authModal'); this.updateUIForAuth();
+                this.showNotification(`Добро пожаловать, ${result.user.firstName}!`); this.loadItems();
+            } else { alert(result.error); }
+        });
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userData = {
+                firstName: document.getElementById('regFirstName').value.trim(),
+                lastName: document.getElementById('regLastName').value.trim(),
+                middleName: document.getElementById('regMiddleName').value.trim(),
+                age: parseInt(document.getElementById('regAge').value),
+                city: document.getElementById('regCity').value.trim(),
+                email: document.getElementById('regEmail').value.trim(),
+                password: document.getElementById('regPassword').value
+            };
+            const result = this.auth.register(userData);
+            if (result.success) {
+                this.closeModal('registerModal'); this.updateUIForAuth();
+                this.showNotification(`Регистрация успешна! ${result.user.firstName}, добро пожаловать!`); this.loadItems();
+            } else { alert(result.error); }
+        });
+    }
 
     setupFilters() {
         document.querySelectorAll('#filterContainer .filter').forEach(btn => {
@@ -816,8 +705,7 @@ class App {
         this.catalogGrid.innerHTML = filteredItems.map(item => {
             const isOwner = currentUserEmail && item.ownerEmail === currentUserEmail;
             const isFav = favIds.includes(item.id);
-            const isReserved = chatService.isReserved(item.id);
-            return CardComponent.render(item, isOwner, isFav, isReserved);
+            return CardComponent.render(item, isOwner, isFav);
         }).join('');
     }
 
@@ -834,9 +722,7 @@ class App {
             }
         };
         this.searchButton.addEventListener('click', performSearch);
-        this.searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') performSearch();
-        });
+        this.searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
     }
 
     showNotification(text) {
