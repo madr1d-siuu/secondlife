@@ -1,0 +1,18 @@
+{
+  "name": "secondlife",
+  "version": "1.0.0",
+  "description": "Клиентская часть интернет-ресурса для размещения объявлений о продаже подержанных вещей",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server --port=5500 --open=index.html",
+    "lint": "eslint js/",
+    "format": "prettier --write ."
+  },
+  "author": "Беспалов Е.А., ИКБО-14-24",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "live-server": "^1.2.2",
+    "prettier": "^3.0.0"
+  }
+}

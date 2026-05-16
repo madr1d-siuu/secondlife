@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecondLife — Продажа подержанных вещей</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="page">
+    <header class="header">
+        <div class="header__container">
+            <a href="/" class="logo header__logo">
+                <span class="logo__text">SecondLife</span>
+            </a>
+            <nav class="nav header__nav">
+                <ul class="nav__list">
+                    <li class="nav__item"><a href="#" class="nav__link" data-page="about">О нас</a></li>
+                    <li class="nav__item"><a href="#" class="nav__link nav__link--active" data-page="catalog">Каталог</a></li>
+                    <li class="nav__item"><a href="#" class="nav__link" data-page="support">Поддержка</a></li>
+                    <li class="nav__item" id="navFavorites" style="display:none"><a href="#" class="nav__link" data-page="favorites">Избранное</a></li>
+                    <li class="nav__item" id="navMyItems" style="display:none"><a href="#" class="nav__link" data-page="my-items">Мои вещи</a></li>
+                    <li class="nav__item" id="navMyOrders" style="display:none"><a href="#" class="nav__link" data-page="my-orders">Заказы</a></li>
+                    <li class="nav__item" id="navProfile" style="display:none"><a href="#" class="nav__link" data-page="profile">Профиль</a></li>
+                </ul>
+            </nav>
+            <div class="header__actions" id="headerActions">
+                <button class="button button--outline header__button" id="btnLogin">Войти</button>
+                <button class="button button--primary header__button" id="btnRegister">Регистрация</button>
+            </div>
+            <div class="header__user" id="headerUser" style="display:none">
+                <div class="header__avatar" id="headerAvatar"></div>
+                <span class="header__username" id="headerUsername"></span>
+                <button class="button button--primary button--small" id="btnCreateAd">+ Подать объявление</button>
+                <button class="button button--outline button--small" id="btnLogout">Выйти</button>
+            </div>
+            <button class="burger header__burger" aria-label="Меню">
+                <span class="burger__line"></span>
+                <span class="burger__line"></span>
+                <span class="burger__line"></span>
+            </button>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Каталог -->
+        <section class="page-section page-section--active" id="catalogPage">
+            <section class="hero">
+                <div class="hero__container">
+                    <h1 class="hero__title">Найди ценное<br>среди ненужного</h1>
+                    <p class="hero__subtitle">Тысячи подержанных вещей ждут нового хозяина</p>
+                    <div class="search hero__search">
+                        <input type="text" class="search__input" placeholder="Что ищете? Например, велосипед...">
+                        <button class="button button--primary search__button">Поиск</button>
+                    </div>
+                </div>
+            </section>
+            <section class="catalog">
+                <div class="catalog__container">
+                    <div class="catalog__header">
+                        <h2 class="catalog__title">Свежие объявления</h2>
+                        <div class="catalog__filters" id="filterContainer">
+                            <button class="filter filter--active" data-category="all">Все</button>
+                            <button class="filter" data-category="electronics">Электроника</button>
+                            <button class="filter" data-category="clothes">Одежда и обувь</button>
+                            <button class="filter" data-category="furniture">Мебель</button>
+                            <button class="filter" data-category="sport">Спорт и отдых</button>
+                            <button class="filter" data-category="home">Для дома</button>
+                            <button class="filter" data-category="music">Музыка</button>
+                            <button class="filter" data-category="photo">Фото и видео</button>
+                            <button class="filter" data-category="kids">Детские товары</button>
+                            <button class="filter" data-category="hobby">Хобби</button>
+                            <button class="filter" data-category="other">Прочее</button>
+                        </div>
+                        <div class="catalog__city-filter">
+                            <label class="catalog__city-label" for="cityFilter">Город:</label>
+                            <select class="form__input form__select catalog__city-select" id="cityFilter">
+                                <option value="all">Все города</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="catalog__grid" id="catalogGrid"></div>
+                    <div class="catalog__loader" id="loader">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <!-- Избранное -->
+        <section class="page-section" id="favoritesPage">
+            <div class="my-items">
+                <div class="my-items__container">
+                    <h2 class="my-items__title">Избранное</h2>
+                    <div class="catalog__grid" id="favoritesGrid"></div>
+                    <p class="my-items__empty" id="favoritesEmpty" style="display:none">
+                        У вас пока нет избранных объявлений.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- О нас -->
+        <section class="page-section" id="aboutPage">
+            <div class="about">
+                <div class="about__container">
+                    <div class="about__hero">
+                        <h1 class="about__title">О проекте SecondLife</h1>
+                        <p class="about__subtitle">Даём вещам вторую жизнь с 2024 года</p>
+                    </div>
+                    <div class="about__story">
+                        <div class="about__card">
+                            <h3>Как всё началось</h3>
+                            <p>Проект SecondLife родился в общежитии МИРЭА, когда студенты поняли: сколько классных вещей пылится без дела. Мы решили создать площадку, где каждый может продать ненужное и найти ценное. Первая версия запущена в октябре 2024 года и с тех пор постоянно развивается.</p>
+                        </div>
+                        <div class="about__card">
+                            <h3>Наша миссия</h3>
+                            <p>Сократить количество выбрасываемых вещей и сделать вторичное потребление удобным, безопасным и выгодным для всех участников. Мы верим, что у каждой вещи может быть вторая жизнь.</p>
+                        </div>
+                        <div class="about__card">
+                            <h3>Сообщество</h3>
+                            <p>Более 10 000 пользователей уже нашли новый дом для своих вещей. Присоединяйтесь к движению осознанного потребления — продавайте, покупайте, меняйтесь.</p>
+                        </div>
+                    </div>
+                    <div class="about__team">
+                        <h2>Главнокомандующий</h2>
+                        <div class="about__team-grid">
+                            <div class="about__member about__member--large">
+                                <a href="#" class="about__member-link" data-page="developer">
+                                    <div class="about__member-avatar">
+                                        <img src="https://i.ibb.co/vv3vr7DL/photo-2026-05-15-19-58-00.jpg" alt="Беспалов Е.А." style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                                    </div>
+                                    <h4>Беспалов Егор Александрович</h4>
+                                </a>
+                                <p>РТУ МИРЭА</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Разработчик -->
+        <section class="page-section" id="developerPage">
+            <div class="developer">
+                <div class="developer__container">
+                    <button class="developer__back" data-page="about">&larr; Назад</button>
+                    <div class="developer__card">
+                        <div class="developer__avatar">
+                            <img src="https://i.ibb.co/vv3vr7DL/photo-2026-05-15-19-58-00.jpg" alt="Беспалов Е.А." style="width:100%;height:100%;object-fit:cover">
+                        </div>
+                        <h1 class="developer__name">Беспалов Егор Александрович</h1>
+                        <p class="developer__role">Backend-разработчик</p>
+                        <div class="developer__info">
+                            <div class="developer__row">
+                                <span class="developer__label">Возраст</span>
+                                <span class="developer__value">19 лет</span>
+                            </div>
+                            <div class="developer__row">
+                                <span class="developer__label">Город</span>
+                                <span class="developer__value">Химки</span>
+                            </div>
+                            <div class="developer__row">
+                                <span class="developer__label">Образование</span>
+                                <span class="developer__value">РТУ МИРЭА, ИТ, 2 курс</span>
+                            </div>
+                            <div class="developer__row">
+                                <span class="developer__label">Группа</span>
+                                <span class="developer__value">ИКБО-14-24</span>
+                            </div>
+                            <div class="developer__row">
+                                <span class="developer__label">Направление</span>
+                                <span class="developer__value">Программная инженерия (09.03.04)</span>
+                            </div>
+                        </div>
+                        <div class="developer__bio">
+                            <h3>О себе</h3>
+                            <p>Мне 19 лет, живу в Химках. С детства увлекаюсь футболом — это моя главная страсть. Болею за ЦСКА и восхищаюсь игрой Криштиану Роналду, который своим трудом и упорством доказал, что нет ничего невозможного. В программировании ценю чёткую логику и структуру, поэтому backend для меня — идеальное направление. Мне нравится разбираться, как всё устроено изнутри, строить надёжные системы и видеть, как код оживает и начинает приносить пользу. Проект SecondLife — курсовая работа, в которой я применил знания, полученные за время учёбы в РТУ МИРЭА.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Поддержка -->
+        <section class="page-section" id="supportPage">
+            <div class="support">
+                <div class="support__container">
+                    <h1 class="support__title">Поддержка</h1>
+                    <p class="support__subtitle">Мы всегда на связи и готовы помочь</p>
+                    <div class="support__grid">
+                        <div class="support__card">
+                            <div class="support__icon-wrapper">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="#2563eb">
+                                    <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"/>
+                                </svg>
+                            </div>
+                            <h3>Email</h3>
+                            <p>support@secondlife.ru</p>
+                            <p class="support__note">Отвечаем в течение 2 часов</p>
+                        </div>
+                        <div class="support__card">
+                            <div class="support__icon-wrapper">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="#2563eb">
+                                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-1.02.24l-2.2 2.2z"/>
+                                </svg>
+                            </div>
+                            <h3>Телефон</h3>
+                            <p>8 (800) 555-35-35</p>
+                            <p class="support__note">Ежедневно с 9:00 до 21:00</p>
+                        </div>
+                        <div class="support__card">
+                            <div class="support__icon-wrapper">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="#2563eb">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.07-.18c-.09-.07-.22-.05-.31-.03-.13.03-2.2 1.4-6.22 4.11-.59.4-1.12.6-1.6.59-.53-.01-1.54-.3-2.29-.55-.92-.3-1.66-.46-1.59-.97.03-.27.4-.54 1.1-.82 4.33-1.89 7.22-3.13 8.67-3.73 4.13-1.72 4.99-2.02 5.55-2.03.12 0 .39.03.57.17.15.12.19.28.21.41.02.14.04.47.03.55z"/>
+                                </svg>
+                            </div>
+                            <h3>Telegram</h3>
+                            <p>@secondlife_support</p>
+                            <p class="support__note">Оперативные ответы</p>
+                        </div>
+                    </div>
+                    <div class="support__faq">
+                        <h2>Частые вопросы</h2>
+                        <div class="support__faq-item">
+                            <h4>Как разместить объявление?</h4>
+                            <p>Зарегистрируйтесь на сайте, нажмите «Подать объявление» и заполните форму. Всё просто!</p>
+                        </div>
+                        <div class="support__faq-item">
+                            <h4>Безопасны ли сделки?</h4>
+                            <p>Мы рекомендуем встречаться в людных местах и проверять товар перед покупкой. Сервис выступает только площадкой для объявлений.</p>
+                        </div>
+                        <div class="support__faq-item">
+                            <h4>Сколько стоит размещение?</h4>
+                            <p>Размещение объявлений полностью бесплатное. Никаких скрытых платежей.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Мои вещи -->
+        <section class="page-section" id="myItemsPage">
+            <div class="my-items">
+                <div class="my-items__container">
+                    <h2 class="my-items__title">Мои объявления</h2>
+                    <button class="button button--primary" id="btnCreateAdMyItems">+ Добавить вещь</button>
+                    <div class="catalog__grid" id="myItemsGrid" style="margin-top:24px"></div>
+                    <p class="my-items__empty" id="myItemsEmpty" style="display:none">
+                        У вас пока нет объявлений. Нажмите «Добавить вещь», чтобы создать первое.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Мои заказы -->
+        <section class="page-section" id="myOrdersPage">
+            <div class="my-items">
+                <div class="my-items__container">
+                    <h2 class="my-items__title">Мои заказы</h2>
+                    <div class="catalog__grid" id="myOrdersGrid"></div>
+                    <p class="my-items__empty" id="myOrdersEmpty" style="display:none">
+                        У вас пока нет заказов.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Профиль -->
+        <section class="page-section" id="profilePage">
+            <div class="profile-page">
+                <div class="profile-page__container">
+                    <h1 class="profile-page__title">Мой профиль</h1>
+                    <div class="profile-page__card">
+                        <div class="profile-page__avatar-section">
+                            <div class="profile-page__avatar" id="profileAvatarLarge">
+                                <span id="profileAvatarText"></span>
+                            </div>
+                            <label class="button button--outline button--small profile-page__upload-btn">
+                                Изменить аватар
+                                <input type="file" id="avatarUpload" accept="image/*" hidden>
+                            </label>
+                        </div>
+                        <div class="profile-page__info">
+                            <div class="profile-page__row">
+                                <span class="profile-page__label">Фамилия</span>
+                                <span class="profile-page__value" id="profileLastName"></span>
+                            </div>
+                            <div class="profile-page__row">
+                                <span class="profile-page__label">Имя</span>
+                                <span class="profile-page__value" id="profileFirstName"></span>
+                            </div>
+                            <div class="profile-page__row">
+                                <span class="profile-page__label">Отчество</span>
+                                <span class="profile-page__value" id="profileMiddleName"></span>
+                            </div>
+                            <div class="profile-page__row">
+                                <span class="profile-page__label">Возраст</span>
+                                <span class="profile-page__value" id="profileAgeVal"></span>
+                            </div>
+                            <div class="profile-page__row">
+                                <span class="profile-page__label">Город</span>
+                                <span class="profile-page__value" id="profileCityVal"></span>
+                            </div>
+                            <div class="profile-page__row">
+                                <span class="profile-page__label">Email</span>
+                                <span class="profile-page__value" id="profileEmailVal"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer__container">
+            <p class="footer__copy">© 2026 SecondLife. Курсовая работа Беспалова Е.А., ИКБО-14-24</p>
+        </div>
+    </footer>
+
+    <!-- Модальное окно деталей объявления -->
+    <div class="modal" id="itemModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content">
+            <button class="modal__close" data-modal="itemModal" aria-label="Закрыть">&times;</button>
+            <div class="modal__body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно авторизации -->
+    <div class="modal" id="authModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content modal__content--form">
+            <button class="modal__close" data-modal="authModal" aria-label="Закрыть">&times;</button>
+            <div class="modal__body">
+                <h2 class="modal__form-title">Вход</h2>
+                <form class="form" id="authForm">
+                    <div class="form__group">
+                        <label class="form__label" for="authEmail">Email</label>
+                        <input type="email" class="form__input" id="authEmail" required placeholder="example@mail.ru">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="authPassword">Пароль</label>
+                        <input type="password" class="form__input" id="authPassword" required placeholder="Не менее 6 символов" minlength="6">
+                    </div>
+                    <div class="form__actions">
+                        <button type="button" class="button button--outline" data-modal="authModal">Отмена</button>
+                        <button type="submit" class="button button--primary">Войти</button>
+                    </div>
+                    <p class="form__switch">Нет аккаунта? <a href="#" id="switchToRegister">Зарегистрироваться</a></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно регистрации -->
+    <div class="modal" id="registerModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content modal__content--form">
+            <button class="modal__close" data-modal="registerModal" aria-label="Закрыть">&times;</button>
+            <div class="modal__body">
+                <h2 class="modal__form-title">Регистрация</h2>
+                <form class="form" id="registerForm">
+                    <div class="form__group">
+                        <label class="form__label" for="regFirstName">Имя *</label>
+                        <input type="text" class="form__input" id="regFirstName" required placeholder="Иван">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="regLastName">Фамилия *</label>
+                        <input type="text" class="form__input" id="regLastName" required placeholder="Иванов">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="regMiddleName">Отчество</label>
+                        <input type="text" class="form__input" id="regMiddleName" placeholder="Иванович">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="regAge">Возраст *</label>
+                        <input type="number" class="form__input" id="regAge" required min="14" max="120" placeholder="25">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="regCity">Город проживания *</label>
+                        <input type="text" class="form__input" id="regCity" required placeholder="Москва">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="regEmail">Email *</label>
+                        <input type="email" class="form__input" id="regEmail" required placeholder="example@mail.ru">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="regPassword">Пароль *</label>
+                        <input type="password" class="form__input" id="regPassword" required placeholder="Не менее 6 символов" minlength="6">
+                    </div>
+                    <div class="form__actions">
+                        <button type="button" class="button button--outline" data-modal="registerModal">Отмена</button>
+                        <button type="submit" class="button button--primary">Зарегистрироваться</button>
+                    </div>
+                    <p class="form__switch">Уже есть аккаунт? <a href="#" id="switchToLogin">Войти</a></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания/редактирования объявления -->
+    <div class="modal" id="createAdModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content modal__content--form">
+            <button class="modal__close" data-modal="createAdModal" aria-label="Закрыть">&times;</button>
+            <div class="modal__body">
+                <h2 class="modal__form-title" id="adFormTitle">Подать объявление</h2>
+                <form class="form" id="createAdForm">
+                    <div class="form__group">
+                        <label class="form__label" for="adTitle">Название товара *</label>
+                        <input type="text" class="form__input" id="adTitle" required placeholder="Например: Велосипед Stels">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="adCategory">Категория *</label>
+                        <select class="form__input form__select" id="adCategory" required>
+                            <option value="">Выберите категорию</option>
+                            <option value="electronics">Электроника</option>
+                            <option value="clothes">Одежда и обувь</option>
+                            <option value="furniture">Мебель</option>
+                            <option value="sport">Спорт и отдых</option>
+                            <option value="home">Для дома</option>
+                            <option value="music">Музыка</option>
+                            <option value="photo">Фото и видео</option>
+                            <option value="kids">Детские товары</option>
+                            <option value="hobby">Хобби</option>
+                            <option value="other">Прочее</option>
+                        </select>
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="adPrice">Цена (₽) *</label>
+                        <input type="number" class="form__input" id="adPrice" required min="0" placeholder="15000">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="adCondition">Состояние</label>
+                        <select class="form__input form__select" id="adCondition">
+                            <option value="Новое">Новое</option>
+                            <option value="Отличное">Отличное</option>
+                            <option value="Хорошее" selected>Хорошее</option>
+                            <option value="Удовлетворительное">Удовлетворительное</option>
+                        </select>
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="adImage">Фотография товара (для каталога)</label>
+                        <input type="file" class="form__input form__file" id="adImage" accept="image/*">
+                        <div class="form__image-preview" id="imagePreview"></div>
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="adVideo">Ссылка на видео (для карточки товара)</label>
+                        <input type="url" class="form__input" id="adVideo" placeholder="https://youtube.com/watch?v=... или https://...video.mp4">
+                        <p class="form__hint">Поддерживаются: YouTube, Vimeo, прямые ссылки на MP4</p>
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="adDescription">Описание *</label>
+                        <textarea class="form__input form__textarea" id="adDescription" required rows="4" placeholder="Опишите товар..."></textarea>
+                    </div>
+                    <div class="form__actions">
+                        <button type="button" class="button button--outline" data-modal="createAdModal">Отмена</button>
+                        <button type="submit" class="button button--primary" id="adSubmitBtn">Опубликовать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно чата -->
+    <div class="modal" id="chatModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content modal__content--chat">
+            <button class="modal__close" data-modal="chatModal" aria-label="Закрыть">&times;</button>
+            <div class="chat">
+                <div class="chat__header">
+                    <h3 class="chat__title">Чат с продавцом</h3>
+                    <p class="chat__seller-name" id="chatSellerName"></p>
+                </div>
+                <div class="chat__messages" id="chatMessages"></div>
+                <form class="chat__form" id="chatForm">
+                    <input type="text" class="chat__input" placeholder="Введите сообщение..." id="chatInput" required>
+                    <button type="submit" class="button button--primary chat__send-btn">Отправить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно покупки -->
+    <div class="modal" id="purchaseModal">
+        <div class="modal__overlay"></div>
+        <div class="modal__content modal__content--purchase">
+            <button class="modal__close" data-modal="purchaseModal" aria-label="Закрыть">&times;</button>
+            <div class="modal__body">
+                <h2 class="purchase__title">Оформление покупки</h2>
+                <div class="purchase__item" id="purchaseItemInfo"></div>
+                <form class="form" id="purchaseForm">
+                    <div class="form__group">
+                        <label class="form__label" for="buyerName">Ваше имя *</label>
+                        <input type="text" class="form__input" id="buyerName" required placeholder="Иван">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="buyerPhone">Телефон *</label>
+                        <input type="tel" class="form__input" id="buyerPhone" required placeholder="+7 (999) 123-45-67">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="buyerComment">Комментарий</label>
+                        <textarea class="form__input form__textarea" id="buyerComment" rows="2" placeholder="Пожелания..."></textarea>
+                    </div>
+                    <div class="form__actions">
+                        <button type="button" class="button button--outline" data-modal="purchaseModal">Отмена</button>
+                        <button type="submit" class="button button--primary">Подтвердить покупку</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div class="notification" id="notification"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
