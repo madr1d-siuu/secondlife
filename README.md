@@ -45,19 +45,24 @@ resale-site/
 ├── README.md
 
 ├── css/
-│ └── style.css
-├── js/
-│ ├── api.js
-│ ├── auth.js
-│ ├── chat.js
-│ ├── components.js
-│ └── app.js
-├── data/
-│ └── items.json
-└── img/
-└── avatar.png
 
-text
+│ └── style.css
+
+├── js/
+
+│ ├── api.js
+
+│ ├── auth.js
+
+│ ├── chat.js
+
+│ ├── components.js
+
+│ └── app.js
+
+├── data/
+
+│ └── items.json
 
 ---
 
